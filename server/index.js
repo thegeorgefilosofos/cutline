@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { keyConfigured } from './nous.js';
+import { agentEnabled } from './hermesAgent.js';
 
 const app = createApp();
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
@@ -18,6 +19,13 @@ if (prod && existsSync(dist)) {
 const port = Number(process.env.PORT) || 8787;
 app.listen(port, () => {
   console.log(`CUTLINE API on http://localhost:${port}`);
-  console.log(`Nous API key: ${keyConfigured() ? 'configured' : 'NOT configured — local interpreter fallback will be used'}`);
-  console.log(`NOUS_MODEL: ${process.env.NOUS_MODEL ? process.env.NOUS_MODEL : '(not set — will auto-select a listed Hermes model)'}`);
+  if (agentEnabled()) {
+    console.log('Interpreter: Hermes Agent (local CLI, hermes -z)');
+    console.log(`HERMES_AGENT_MODEL: ${process.env.HERMES_AGENT_MODEL || '(not set: Hermes Agent default model)'}`);
+    console.log(`HERMES_AGENT_TOOLSETS: ${(process.env.HERMES_AGENT_TOOLSETS ?? 'todo') || '(none passed)'}`);
+  } else {
+    console.log('Interpreter: Nous API');
+    console.log(`Nous API key: ${keyConfigured() ? 'configured' : 'NOT configured, local interpreter fallback will be used'}`);
+    console.log(`NOUS_MODEL: ${process.env.NOUS_MODEL ? process.env.NOUS_MODEL : '(not set: will auto-select a listed Hermes model)'}`);
+  }
 });
