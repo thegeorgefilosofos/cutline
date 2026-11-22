@@ -83,6 +83,36 @@ installed and whether a real run has succeeded (`verified`), and with which mode
 
 The label reads *Hermes Agent · <model>*, plus *(not a Hermes model)* when the model is not Hermes.
 
+### Setting up Hermes Agent on Windows
+
+Run each line on its own in PowerShell:
+
+```powershell
+iex (irm https://hermes-agent.nousresearch.com/install.ps1)
+hermes portal
+hermes -z "Reply with exactly: OK" -t todo
+Set-Content -Path .env -Encoding ascii -Value "INTERPRETER=hermes-agent","HERMES_AGENT_PROVIDER=nous","HERMES_AGENT_TOOLSETS=todo","HERMES_AGENT_MODEL=","PORT=8787"
+npm run dev
+```
+
+- `hermes portal` opens a browser to log in to Nous Portal.
+- The `hermes -z` line should answer `OK`.
+- Open a **new** PowerShell window after installing Node.js so `node` and `npm` are on the PATH.
+- `-t none` is not a valid toolset; `todo` is the most restricted one.
+
+### Verified status (22 Nov 2026, Windows 11)
+
+- Hermes Agent v0.23.3 (Python 3.14), logged in via Nous Portal OAuth.
+- A real CUTLINE run through Hermes Agent: three distinct directions, valid JSON on the first attempt,
+  about 15 s. The directions changed the artwork's light, motifs and kept words, the kept work and
+  PNG print carry the agent's title, and the work stays in the collection after a reload.
+- `/api/status` → `hermesAgent.verified: true`, `lastRun.model: anthropic/claude-sonnet-5.5`,
+  `hermesModelVerified: false`.
+- **Hermes 4 models are not available:** `Hermes-4-405B` and `Hermes-4-70B` return
+  "This model has been retired", both via a Nous API key and via Portal OAuth. The agent therefore runs
+  on a non-Hermes model, and the app labels it so: *Hermes Agent · anthropic/claude-sonnet-5.5 (not a
+  Hermes model)*.
+
 ## Structure
 
 - `src/lib/analyze.ts` — the memory interpreter (light, place, motifs, keywords, title)
