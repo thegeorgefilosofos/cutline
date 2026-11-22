@@ -5,6 +5,7 @@ import { sourceLabel } from '../lib/interpret';
 import type { Work } from '../lib/types';
 import { DIRECTIONS } from '../lib/types';
 import { ArtCanvas } from './ArtCanvas';
+import { WorkImage } from './WorkImage';
 
 export function Kept({ work, onAnother, onCollection }: { work: Work; onAnother: () => void; onCollection: () => void }) {
   const a = useMemo(() => analyze(work.memory.text), [work.memory.text]);
@@ -31,7 +32,13 @@ export function Kept({ work, onAnother, onCollection }: { work: Work; onAnother:
   return (
     <section className={`kept ${wide ? 'wide' : ''}`}>
       <div className="kept-art">
-        <ArtCanvas memory={work.memory} params={p} />
+        <WorkImage memory={work.memory} params={p} photograph={work.photograph} />
+        {work.photograph && (
+          <figure className="kept-study">
+            <ArtCanvas memory={work.memory} params={p} quality={0.6} />
+            <figcaption className="mono">Canvas study · {dir.name}</figcaption>
+          </figure>
+        )}
       </div>
 
       <div className="kept-label">
@@ -58,6 +65,12 @@ export function Kept({ work, onAnother, onCollection }: { work: Work; onAnother:
             <dt>Interpreted by</dt>
             <dd>{sourceLabel(src?.source, src?.model)}</dd>
           </div>
+          {work.photograph && (
+            <div>
+              <dt>Photograph</dt>
+              <dd>Developed on Modal · {work.photograph.model}</dd>
+            </div>
+          )}
           <div>
             <dt>Medium</dt>
             <dd>

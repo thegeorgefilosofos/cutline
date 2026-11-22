@@ -1,7 +1,7 @@
 import { analyze, keptWords } from '../lib/analyze';
 import type { Work } from '../lib/types';
 import { DIRECTIONS } from '../lib/types';
-import { ArtCanvas } from './ArtCanvas';
+import { WorkImage } from './WorkImage';
 
 export function Collection({
   works,
@@ -38,11 +38,11 @@ export function Collection({
           return (
             <article key={w.id} className={`work work-${w.params.frame.replace(':', 'x')}`} style={{ animationDelay: `${i * 70}ms` }}>
               <button className="work-img" onClick={() => onOpen(w)} aria-label={`Open ${w.interpretation?.direction?.title ?? a.title}`}>
-                <ArtCanvas memory={w.memory} params={w.params} quality={0.75} />
+                <WorkImage memory={w.memory} params={w.params} photograph={w.photograph} quality={0.75} />
               </button>
               <div className="work-cap">
                 <span className="mono dim">
-                  No. {String(w.no).padStart(3, '0')} · {d.name} · {w.memory.year || 'Undated'}
+                  No. {String(w.no).padStart(3, '0')} · {w.photograph ? 'Photograph' : d.name} · {w.memory.year || 'Undated'}
                 </span>
                 <h3>{w.interpretation?.direction?.title ?? a.title}</h3>
                 <span className="mono">{keptWords(a, w.params.kept).slice(0, 5).join(' / ')}</span>

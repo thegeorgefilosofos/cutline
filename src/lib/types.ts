@@ -57,6 +57,16 @@ export interface Work {
   keptAt: number;
   example?: boolean;
   interpretation?: { source: 'nous' | 'hermes-agent' | 'hermes' | 'local'; model?: string; direction?: CreativeDirection };
+  /** A photograph developed on Modal and kept with the work. The image itself is stored on the server. */
+  photograph?: Photograph;
+}
+
+/** Reference to a photograph stored by the CUTLINE server (GET /api/photographs/:id). */
+export interface Photograph {
+  id: string;
+  model: string;
+  frame: Frame;
+  developedAt: number;
 }
 
 export const FRAME_RATIO: Record<Frame, number> = {

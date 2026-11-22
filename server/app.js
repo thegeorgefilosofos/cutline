@@ -2,6 +2,8 @@
 import express from 'express';
 import { health, interpret, isHermesModel, keyConfigured, listModels, redact } from './nous.js';
 import { agentEnabled, agentHealth, agentVersion, interpretWithAgent } from './hermesAgent.js';
+import { photograph, photographConfigured, photographHealth, PhotographError, readPhotograph } from './photograph.js';
+import { analyze as pangramAnalyze, listModels as pangramModels, pangramConfigured, pangramHealth, PangramError } from './pangram.js';
 
 export function createApp() {
   const app = express();
@@ -56,6 +58,28 @@ export function createApp() {
       }
       out.nous.modelsEndpoint = health.models;
     }
+    // ORIGIN CHECK (Pangram). "verified" only after a real successful analysis in this process.
+    out.pangram = {
+      configured: pangramConfigured(),
+      model: (process.env.PANGRAM_MODEL || '').trim() || null,
+      models: pangramHealth.models,
+      lastAnalysis: pangramHealth.analysis,
+      verified: Boolean(pangramHealth.analysis?.ok),
+    };
+    if (pangramConfigured() && req.query.check !== '0') {
+      try {
+        await pangramModels({ force: req.query.refresh === '1' });
+      } catch {
+        /* reported through pangramHealth.models */
+      }
+      out.pangram.models = pangramHealth.models;
+    }
+    // PHOTOGRAPH (Modal). "verified" only after a real successful generation in this process.
+    out.photograph = {
+      configured: photographConfigured(),
+      last: photographHealth.last,
+      verified: Boolean(photographHealth.last?.ok),
+    };
     res.set('Cache-Control', 'no-store').json(out);
   });
 
@@ -86,6 +110,57 @@ export function createApp() {
     } catch (e) {
       res.status(502).json({ ok: false, source: 'unavailable', error: redact(e.message) });
     }
+  });
+
+  // ORIGIN CHECK: user-initiated Pangram analysis of the memory text. Separate from interpretation.
+  let originInFlight = 0;
+  app.post('/api/origin', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    const { text } = req.body || {};
+    if (typeof text !== 'string' || text.trim().split(/\s+/).length < 5 || text.length > 2000) {
+      return res.status(400).json({ ok: false, code: 'invalid_input', error: 'Text must be at least 5 words and at most 2000 characters.' });
+    }
+    if (!pangramConfigured()) {
+      return res.status(503).json({ ok: false, code: 'not_configured', error: 'Pangram is not configured on the server.' });
+    }
+    if (originInFlight >= 3) {
+      return res.status(429).json({ ok: false, code: 'busy', error: 'Too many analyses at once. Try again in a moment.' });
+    }
+    originInFlight++;
+    try {
+      const result = await pangramAnalyze(text.trim());
+      res.json({ ok: true, source: 'pangram', result });
+    } catch (e) {
+      const err = e instanceof PangramError ? e : new PangramError('error', 'Unexpected error.', 502);
+      res.status(err.status).json({ ok: false, code: err.code, error: err.message });
+    } finally {
+      originInFlight--;
+    }
+  });
+
+  // PHOTOGRAPH: user-initiated generation on Modal from the chosen direction.
+  let photographInFlight = 0;
+  app.post('/api/photograph', async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    if (photographInFlight >= 2) {
+      return res.status(429).json({ ok: false, code: 'busy', error: 'A photograph is already being developed.' });
+    }
+    photographInFlight++;
+    try {
+      const result = await photograph(req.body);
+      res.json({ ok: true, source: 'modal', ...result, url: `/api/photographs/${result.id}` });
+    } catch (e) {
+      const err = e instanceof PhotographError ? e : new PhotographError('error', 'Unexpected error.', 502);
+      res.status(err.status).json({ ok: false, code: err.code, error: err.message });
+    } finally {
+      photographInFlight--;
+    }
+  });
+
+  app.get('/api/photographs/:id', async (req, res) => {
+    const jpg = await readPhotograph(req.params.id);
+    if (!jpg) return res.status(404).json({ ok: false, error: 'not found' });
+    res.set({ 'Content-Type': 'image/jpeg', 'Cache-Control': 'private, max-age=31536000, immutable' }).send(jpg);
   });
 
   app.use('/api', (_req, res) => res.status(404).json({ ok: false, error: 'not found' }));

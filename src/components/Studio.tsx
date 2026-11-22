@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import type { Analysis, Light } from '../lib/analyze';
-import { keptWords } from '../lib/analyze';
-import type { Accent, Frame, Memory, Params } from '../lib/types';
+import { keptWords, motifsOf } from '../lib/analyze';
+import type { Accent, Frame, Memory, Params, Photograph } from '../lib/types';
 import { DIRECTIONS } from '../lib/types';
 import { ArtCanvas } from './ArtCanvas';
+import { PhotographPanel } from './PhotographPanel';
 
 const FRAMES: Frame[] = ['4:5', '1:1', '16:9', '3:1'];
 const LIGHTS: Light[] = ['dawn', 'day', 'dusk', 'night'];
@@ -16,6 +17,11 @@ export function Studio({
   onChange,
   onKeep,
   onBack,
+  composition,
+  photo,
+  keepPhoto,
+  onPhoto,
+  onKeepPhoto,
 }: {
   memory: Memory;
   analysis: Analysis;
@@ -23,6 +29,12 @@ export function Studio({
   onChange: (p: Params) => void;
   onKeep: () => void;
   onBack: () => void;
+  /** The chosen direction's composition, when an interpreter provided one. */
+  composition?: string;
+  photo: Photograph | null;
+  keepPhoto: boolean;
+  onPhoto: (p: Photograph) => void;
+  onKeepPhoto: (keep: boolean) => void;
 }) {
   const set = (patch: Partial<Params>) => onChange({ ...params, ...patch });
   const [dragging, setDragging] = useState(false);
@@ -184,6 +196,21 @@ export function Studio({
             </div>
           </div>
         </div>
+
+        <PhotographPanel
+          request={{
+            frame: params.frame,
+            light: params.light,
+            motifs: [...new Set([...motifsOf(kept), ...(params.motifs ?? [])])].filter((m) => m !== 'open'),
+            words: kept,
+            composition,
+            seed: params.seed,
+          }}
+          photo={photo}
+          keepPhoto={keepPhoto}
+          onPhoto={onPhoto}
+          onKeepPhoto={onKeepPhoto}
+        />
 
         <div className="panel-actions">
           <button className="btn btn-ghost" onClick={() => set({ seed: (params.seed * 1664525 + 1013904223) >>> 0 })}>

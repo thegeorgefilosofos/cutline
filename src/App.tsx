@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { analyze } from './lib/analyze';
 import { initialParams, loadCollection, saveCollection } from './lib/store';
-import type { Direction, Interpretation, Memory, Params, Work } from './lib/types';
+import type { Direction, Interpretation, Memory, Params, Photograph, Work } from './lib/types';
 import { applyDirection, directionFor, interpretMemory } from './lib/interpret';
 import { Header } from './components/Header';
 import { Intro } from './components/Intro';
@@ -23,6 +23,9 @@ export default function App() {
   // null while Hermes is being asked; then a Hermes result or an honest local fallback.
   const [interp, setInterp] = useState<Interpretation | null>(null);
   const request = useRef(0);
+  // A photograph developed on Modal in the studio; kept only if the person chooses to.
+  const [photo, setPhoto] = useState<Photograph | null>(null);
+  const [keepPhoto, setKeepPhoto] = useState(false);
 
   useEffect(() => {
     saveCollection(collection);
@@ -38,6 +41,8 @@ export default function App() {
     const sameText = m.text === memory.text && interp;
     setMemory(m);
     setParams(initialParams(m));
+    setPhoto(null);
+    setKeepPhoto(false);
     setStage('reading');
     if (sameText) return; // memory unchanged: keep the interpretation we already have
     setInterp(null);
@@ -71,7 +76,10 @@ export default function App() {
       interpretation: interp
         ? { source: interp.source, model: interp.model, direction: directionFor(interp, params.direction) }
         : { source: 'local' },
+      ...(photo && keepPhoto ? { photograph: photo } : {}),
     };
+    setPhoto(null);
+    setKeepPhoto(false);
     setCollection((c) => [work, ...c]);
     setViewing(work);
     setStage('kept');
@@ -82,6 +90,8 @@ export default function App() {
     setParams(null);
     setViewing(null);
     setInterp(null);
+    setPhoto(null);
+    setKeepPhoto(false);
     setStage('memory');
   };
 
@@ -105,7 +115,19 @@ export default function App() {
           <Directions memory={memory} analysis={analysis} params={params} interp={interp} onChoose={choose} onBack={() => go('memory')} />
         )}
         {stage === 'studio' && analysis && params && (
-          <Studio memory={memory} analysis={analysis} params={params} onChange={changeParams} onKeep={keep} onBack={() => go('directions')} />
+          <Studio
+            memory={memory}
+            analysis={analysis}
+            params={params}
+            onChange={changeParams}
+            onKeep={keep}
+            onBack={() => go('directions')}
+            composition={directionFor(interp, params.direction)?.composition}
+            photo={photo}
+            keepPhoto={keepPhoto}
+            onPhoto={setPhoto}
+            onKeepPhoto={setKeepPhoto}
+          />
         )}
         {stage === 'kept' && viewing && (
           <Kept work={viewing} onAnother={restart} onCollection={() => go('collection')} />

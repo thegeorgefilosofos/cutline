@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { keyConfigured } from './nous.js';
 import { agentEnabled } from './hermesAgent.js';
+import { pangramConfigured } from './pangram.js';
+import { photographConfigured } from './photograph.js';
 
 const app = createApp();
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
@@ -28,4 +30,8 @@ app.listen(port, () => {
     console.log(`Nous API key: ${keyConfigured() ? 'configured' : 'NOT configured, local interpreter fallback will be used'}`);
     console.log(`NOUS_MODEL: ${process.env.NOUS_MODEL ? process.env.NOUS_MODEL : '(not set: will auto-select a listed Hermes model)'}`);
   }
+  // Configuration only, never values.
+  console.log(`Origin check (Pangram): ${pangramConfigured() ? 'configured' : 'not configured (PANGRAM_API_KEY)'}`);
+  console.log(`Photograph (Modal): ${photographConfigured() ? 'configured' : 'not configured (MODAL_PHOTOGRAPH_URL, MODAL_PHOTOGRAPH_KEY)'}`);
+  if (prod) console.log(`Serving the built app at http://localhost:${port}`);
 });

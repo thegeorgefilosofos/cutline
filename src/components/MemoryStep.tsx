@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { EXAMPLES } from '../lib/store';
 import type { Memory } from '../lib/types';
+import { OriginCheck } from './OriginCheck';
 
 const PROMPTS = [
   'Where were you standing?',
@@ -84,6 +85,8 @@ export function MemoryStep({ initial, onSubmit }: { initial: Memory; onSubmit: (
             Read this moment <span className="arrow">→</span>
           </button>
         </div>
+
+        <OriginCheck text={text} words={words} />
 
         <div className="memory-examples">
           <p className="mono label">Or begin with someone else’s</p>

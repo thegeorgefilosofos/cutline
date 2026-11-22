@@ -11,3 +11,10 @@ dist
 *.key
 .modal.toml
 .vercel
+
+# generated photographs (local demo storage)
+data/
+
+# Python bytecode
+__pycache__/
+*.pyc
