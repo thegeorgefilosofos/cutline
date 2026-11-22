@@ -1,4 +1,4 @@
-import type { Light } from './analyze';
+import type { Light, Motif } from './analyze';
 
 export type Direction = 'afterglow' | 'index' | 'cut';
 export type Frame = '4:5' | '1:1' | '16:9' | '3:1';
@@ -19,6 +19,33 @@ export interface Params {
   accent: Accent;
   kept: number[];
   seed: number;
+  /** Motifs suggested by the interpreter for this direction (added to those from kept words). */
+  motifs?: Motif[];
+}
+
+/** One creative direction, as returned by Hermes (validated server-side). */
+export interface CreativeDirection {
+  mode: Direction;
+  title: string;
+  emotional_interpretation: string;
+  visual_philosophy: string;
+  composition: string;
+  light: Light;
+  motifs: Motif[];
+  keep_words: string[];
+  preserves: string;
+  leaves_out: string;
+}
+
+/** Where an interpretation came from. A local result is never labelled as AI. */
+export interface Interpretation {
+  source: 'hermes' | 'local';
+  model?: string;
+  ms?: number;
+  /** Present only when source === 'hermes', ordered I afterglow, II index, III cut. */
+  directions?: CreativeDirection[];
+  /** Why the local interpreter was used instead. */
+  fallbackReason?: string;
 }
 
 export interface Work {
@@ -28,6 +55,7 @@ export interface Work {
   params: Params;
   keptAt: number;
   example?: boolean;
+  interpretation?: { source: 'hermes' | 'local'; model?: string; direction?: CreativeDirection };
 }
 
 export const FRAME_RATIO: Record<Frame, number> = {

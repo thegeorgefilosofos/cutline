@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { analyze } from './lib/analyze';
 import { initialParams, loadCollection, saveCollection } from './lib/store';
-import type { Direction, Memory, Params, Work } from './lib/types';
+import type { Direction, Interpretation, Memory, Params, Work } from './lib/types';
+import { applyDirection, directionFor, interpretMemory } from './lib/interpret';
 import { Header } from './components/Header';
 import { Intro } from './components/Intro';
 import { MemoryStep } from './components/MemoryStep';
@@ -19,6 +20,9 @@ export default function App() {
   const [params, setParams] = useState<Params | null>(null);
   const [collection, setCollection] = useState<Work[]>(() => loadCollection());
   const [viewing, setViewing] = useState<Work | null>(null);
+  // null while Hermes is being asked; then a Hermes result or an honest local fallback.
+  const [interp, setInterp] = useState<Interpretation | null>(null);
+  const request = useRef(0);
 
   useEffect(() => {
     saveCollection(collection);
@@ -30,14 +34,29 @@ export default function App() {
   const go = useCallback((s: Stage) => setStage(s), []);
 
   const submitMemory = (m: Memory) => {
+    const id = ++request.current;
+    const sameText = m.text === memory.text && interp;
     setMemory(m);
     setParams(initialParams(m));
     setStage('reading');
+    if (sameText) return; // memory unchanged: keep the interpretation we already have
+    setInterp(null);
+    interpretMemory(m).then((r) => {
+      if (request.current === id) setInterp(r);
+    });
   };
 
   const choose = (d: Direction) => {
-    setParams((p) => (p ? { ...p, direction: d } : initialParams(memory, d)));
+    const a = analyze(memory.text);
+    setParams((p) => applyDirection(p ?? initialParams(memory, d), interp, d, a));
     setStage('studio');
+  };
+
+  // In the studio, switching direction brings that direction's motifs but keeps the director's light and words.
+  const changeParams = (next: Params) => {
+    setParams((prev) =>
+      prev && next.direction !== prev.direction ? applyDirection(next, interp, next.direction, analyze(memory.text), false) : next,
+    );
   };
 
   const keep = () => {
@@ -49,6 +68,9 @@ export default function App() {
       memory,
       params,
       keptAt: Date.now(),
+      interpretation: interp
+        ? { source: interp.source, model: interp.model, direction: directionFor(interp, params.direction) }
+        : { source: 'local' },
     };
     setCollection((c) => [work, ...c]);
     setViewing(work);
@@ -59,6 +81,7 @@ export default function App() {
     setMemory({ text: '', year: '', author: '' });
     setParams(null);
     setViewing(null);
+    setInterp(null);
     setStage('memory');
   };
 
@@ -77,12 +100,12 @@ export default function App() {
       <main key={stage} className="stage">
         {stage === 'intro' && <Intro onBegin={() => go('memory')} onCollection={() => go('collection')} />}
         {stage === 'memory' && <MemoryStep initial={memory} onSubmit={submitMemory} />}
-        {stage === 'reading' && analysis && <Reading analysis={analysis} onDone={() => go('directions')} />}
+        {stage === 'reading' && analysis && <Reading analysis={analysis} interp={interp} onDone={() => go('directions')} />}
         {stage === 'directions' && analysis && params && (
-          <Directions memory={memory} analysis={analysis} params={params} onChoose={choose} onBack={() => go('memory')} />
+          <Directions memory={memory} analysis={analysis} params={params} interp={interp} onChoose={choose} onBack={() => go('memory')} />
         )}
         {stage === 'studio' && analysis && params && (
-          <Studio memory={memory} analysis={analysis} params={params} onChange={setParams} onKeep={keep} onBack={() => go('directions')} />
+          <Studio memory={memory} analysis={analysis} params={params} onChange={changeParams} onKeep={keep} onBack={() => go('directions')} />
         )}
         {stage === 'kept' && viewing && (
           <Kept work={viewing} onAnother={restart} onCollection={() => go('collection')} />

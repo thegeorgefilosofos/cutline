@@ -11,9 +11,11 @@ export function Kept({ work, onAnother, onCollection }: { work: Work; onAnother:
   const dir = DIRECTIONS.find((d) => d.id === p.direction)!;
   const keptSet = new Set(p.kept);
   const wide = p.frame === '16:9' || p.frame === '3:1';
+  const src = work.interpretation;
+  const title = src?.direction?.title ?? a.title;
 
   const download = () => {
-    const c = renderPrint(work.memory, a, p, a.title, work.no);
+    const c = renderPrint(work.memory, a, p, title, work.no);
     c.toBlob((b) => {
       if (!b) return;
       const url = URL.createObjectURL(b);
@@ -35,7 +37,7 @@ export function Kept({ work, onAnother, onCollection }: { work: Work; onAnother:
         <p className="mono label">
           {work.example ? 'From the collection' : '05 — Kept'} · No. {String(work.no).padStart(3, '0')}
         </p>
-        <h2>{a.title}</h2>
+        <h2>{title}</h2>
         <dl className="mono">
           <div>
             <dt>Directed by</dt>
@@ -52,12 +54,18 @@ export function Kept({ work, onAnother, onCollection }: { work: Work; onAnother:
             </dd>
           </div>
           <div>
+            <dt>Interpreted by</dt>
+            <dd>{src?.source === 'hermes' ? `Hermes · ${src.model}` : 'Local interpreter (no AI)'}</dd>
+          </div>
+          <div>
             <dt>Medium</dt>
             <dd>
               Memory, {LIGHT_LABEL[p.light].toLowerCase()} light, {p.kept.length} kept words, one decision
             </dd>
           </div>
         </dl>
+
+        {src?.direction && <p className="kept-interp">{src.direction.emotional_interpretation}</p>}
 
         <p className="mono label">What was kept</p>
         <p className="kept-memory">

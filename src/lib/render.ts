@@ -104,7 +104,8 @@ export function drawPhoto(
   const horizon = h * (0.38 + 0.36 * p.focus.y);
   // What you keep shapes what is shown: motifs come from the kept words only.
   const kept = keptWords(a, p.kept);
-  const motifs = kept.length ? motifsOf(kept) : a.motifs;
+  const fromWords = kept.length ? motifsOf(kept) : a.motifs;
+  const motifs = p.motifs?.length ? [...new Set([...fromWords.filter((m) => m !== 'open'), ...p.motifs])] : fromWords;
   const interior = motifs.includes('window');
 
   // Sky
