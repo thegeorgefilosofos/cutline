@@ -40,7 +40,7 @@ export interface CreativeDirection {
 /** Where an interpretation came from. A local result is never labelled as AI. */
 export interface Interpretation {
   /** 'nous' = a real response from the Nous API (Hermes or another listed model). */
-  source: 'nous' | 'local';
+  source: 'nous' | 'hermes-agent' | 'local';
   model?: string;
   ms?: number;
   /** Present only when source === 'nous', ordered I afterglow, II index, III cut. */
@@ -56,7 +56,7 @@ export interface Work {
   params: Params;
   keptAt: number;
   example?: boolean;
-  interpretation?: { source: 'nous' | 'hermes' | 'local'; model?: string; direction?: CreativeDirection };
+  interpretation?: { source: 'nous' | 'hermes-agent' | 'hermes' | 'local'; model?: string; direction?: CreativeDirection };
 }
 
 export const FRAME_RATIO: Record<Frame, number> = {

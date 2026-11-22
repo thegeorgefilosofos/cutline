@@ -66,15 +66,28 @@ Configuration (`.env`, git-ignored; never prefix with `VITE_`):
 | `NOUS_BASE_URL` | optional, defaults to `https://inference-api.nousresearch.com/v1` |
 | `PORT` | optional, defaults to 8787 |
 
-**Fallback.** If the key is missing, the API fails, times out (50 s) or returns invalid data, the
+**Fallback.** If the key is missing, the API fails, times out or returns invalid data, the
 original deterministic local interpreter is used. The UI always labels the source: *Interpreted by
 Hermes · model* or *Local interpreter · Hermes unavailable*. A local result is never shown as AI.
+
+## Hermes Agent (optional, local)
+
+With `INTERPRETER=hermes-agent` in `.env`, the server runs the locally installed Hermes Agent CLI in
+one-shot mode (`hermes -z`) instead of calling the Nous API directly. The answer goes through the
+same validator; on any failure the app falls back to the local interpreter and says so.
+
+Safety: visitor text is untrusted and `-z` auto-approves tool use, so the server launches the binary
+without a shell, with `-t none` (configurable via `HERMES_AGENT_TOOLSETS`), `--ignore-rules`, in an
+empty temporary folder, with a timeout. `GET /api/status` → `hermesAgent` shows whether it is
+installed and whether a real run has succeeded (`verified`), and with which model.
+
+The label reads *Hermes Agent · <model>*, plus *(not a Hermes model)* when the model is not Hermes.
 
 ## Structure
 
 - `src/lib/analyze.ts` — the memory interpreter (light, place, motifs, keywords, title)
 - `src/lib/render.ts` — the three generative directions and the print renderer
 - `src/lib/interpret.ts` — browser client for `/api/interpret` + local fallback
-- `server/` — Express API (`app.js`), Nous client (`nous.js`), response validation (`validate.js`), tests
+- `server/` — Express API (`app.js`), Nous client (`nous.js`), Hermes Agent adapter (`hermesAgent.js`), response validation (`validate.js`), tests
 - `src/components/*` — one component per stage
 - `src/styles.css` — the design system (Space Grotesk / DM Mono, ivory, charcoal, vermilion, lime)

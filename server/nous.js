@@ -69,7 +69,7 @@ export async function resolveModel() {
   return { model: hermes[0], source: 'discovered', listed: true };
 }
 
-const SYSTEM = `You are the curator of CUTLINE, an art exhibition called "The Things We Keep."
+export const SYSTEM = `You are the curator of CUTLINE, an art exhibition called "The Things We Keep."
 A visitor shares one ordinary memory. You propose three genuinely different artistic directions for it.
 
 Strict rules:
@@ -88,7 +88,7 @@ Strict rules:
 - Reply with JSON only, no prose, matching exactly:
 {"directions":[{"mode":"afterglow|index|cut","title":"","emotional_interpretation":"","visual_philosophy":"","composition":"","light":"","motifs":[],"keep_words":[],"preserves":"","leaves_out":""}]}`;
 
-function userPrompt({ text, year, preferences }) {
+export function userPrompt({ text, year, preferences }) {
   const lines = [`Memory: """${text}"""`];
   if (year) lines.push(`Year given by the visitor: ${year}`);
   if (preferences && typeof preferences === 'object') {

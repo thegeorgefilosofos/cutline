@@ -32,14 +32,14 @@ export function Directions({
         <div className="dirs-brief">
           <p className="mono label">Working title</p>
           <p className="dirs-title">{directionFor(interp, 'afterglow')?.title ?? analysis.title}</p>
-          <p className={`mono source ${interp?.source === 'nous' ? 'source-ai' : ''}`}>
-            {interp?.source === 'nous' ? (
+          <p className={`mono source ${(interp && interp.source !== 'local') ? 'source-ai' : ''}`}>
+            {(interp && interp.source !== 'local') ? (
               <>Interpreted by {sourceLabel(interp.source, interp.model)}</>
             ) : (
               <>Local interpreter · Hermes unavailable{interp?.fallbackReason ? ` (${interp.fallbackReason})` : ''}</>
             )}
           </p>
-          {interp?.source !== 'nous' && (
+          {(!interp || interp.source === 'local') && (
             <p className="mono dim">
               {LIGHT_LABEL[analysis.light]} light · {analysis.hero} · {memory.year || 'undated'}
             </p>

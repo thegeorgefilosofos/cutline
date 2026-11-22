@@ -5,12 +5,15 @@ import type { Analysis } from './analyze';
 import type { CreativeDirection, Direction, Interpretation, Memory, Params } from './types';
 
 
-const TIMEOUT_MS = 50_000;
+const TIMEOUT_MS = 130_000; // longer than the server-side agent timeout (120 s)
 
 export const isHermesModel = (model?: string) => /hermes/i.test(model || '');
 
 /** Honest label for where an interpretation came from. Says "Hermes" only for a Hermes model. */
 export function sourceLabel(source: string | undefined, model?: string): string {
+  if (source === 'hermes-agent') {
+    return isHermesModel(model) ? `Hermes Agent · ${model}` : `Hermes Agent · ${model} (not a Hermes model)`;
+  }
   if (source === 'nous' || source === 'hermes') {
     return isHermesModel(model) ? `Hermes · ${model}` : `Nous API · ${model} (not a Hermes model)`;
   }
@@ -26,8 +29,8 @@ export async function interpretMemory(m: Memory): Promise<Interpretation> {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     const body = await res.json().catch(() => null);
-    if (res.ok && body?.ok && body.source === 'nous' && Array.isArray(body.directions) && body.directions.length === 3) {
-      return { source: 'nous', model: body.model, ms: body.ms, directions: body.directions };
+    if (res.ok && body?.ok && (body.source === 'nous' || body.source === 'hermes-agent') && Array.isArray(body.directions) && body.directions.length === 3) {
+      return { source: body.source, model: body.model, ms: body.ms, directions: body.directions };
     }
     return { source: 'local', fallbackReason: body?.error || `server responded ${res.status}` };
   } catch (e) {
@@ -39,7 +42,7 @@ export async function interpretMemory(m: Memory): Promise<Interpretation> {
 
 
 export function directionFor(interp: Interpretation | null, mode: Direction): CreativeDirection | undefined {
-  return interp?.source === 'nous' ? interp.directions?.find((d) => d.mode === mode) : undefined;
+  return interp && interp.source !== 'local' ? interp.directions?.find((d) => d.mode === mode) : undefined;
 }
 
 /**

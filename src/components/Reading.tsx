@@ -50,7 +50,7 @@ export function Reading({
 
   const sourceLine = !interp
     ? `Asking the interpreter ${'.'.repeat(dots).padEnd(3, ' ')}`
-    : interp.source === 'nous'
+    : interp.source !== 'local'
       ? `Interpreted by ....... ${sourceLabel(interp.source, interp.model)}`
       : `Interpreted by ....... local interpreter (Hermes unavailable)`;
 
@@ -71,7 +71,7 @@ export function Reading({
           </div>
         ))}
         {lineCount >= lines.length && (
-          <div key={interp ? interp.source : 'wait'} className={`log-line ${interp?.source === 'nous' ? 'log-ok' : ''}`}>
+          <div key={interp ? interp.source : 'wait'} className={`log-line ${(interp && interp.source !== 'local') ? 'log-ok' : ''}`}>
             {sourceLine}
           </div>
         )}
