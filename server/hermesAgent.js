@@ -4,7 +4,7 @@
 // Safety: a visitor writes the memory, so it is untrusted text going into an agent whose
 // one-shot mode auto-approves tool use. We therefore:
 //  - launch the binary directly (no shell), with a fixed argument list;
-//  - restrict toolsets (HERMES_AGENT_TOOLSETS, default "none");
+//  - restrict toolsets (HERMES_AGENT_TOOLSETS, default "todo": only an in-session task list; no files, terminal, web or browser);
 //  - skip AGENTS.md / memory / rules injection (--ignore-rules);
 //  - run inside an empty temporary directory;
 //  - fence the memory as data and cap its length; time out after HERMES_AGENT_TIMEOUT_MS.
@@ -82,7 +82,7 @@ export async function interpretWithAgent(input) {
   const t0 = Date.now();
   const model = (process.env.HERMES_AGENT_MODEL || '').trim();
   const provider = (process.env.HERMES_AGENT_PROVIDER || '').trim();
-  const toolsets = (process.env.HERMES_AGENT_TOOLSETS ?? 'none').trim();
+  const toolsets = (process.env.HERMES_AGENT_TOOLSETS ?? 'todo').trim();
   const timeout = Number(process.env.HERMES_AGENT_TIMEOUT_MS) || 120_000;
   const dir = await mkdtemp(join(tmpdir(), 'cutline-hermes-'));
   const usageFile = join(dir, 'usage.json');

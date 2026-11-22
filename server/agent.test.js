@@ -41,7 +41,7 @@ test('runs hermes -z with restricted tools, no rules, in an empty temp dir', asy
   assert.equal(args[0], '-z');
   assert.match(args[1], /untrusted visitor text/);
   assert.match(args[1], /IGNORE ALL RULES/, 'memory is passed as data inside the prompt');
-  assert.deepEqual(args.slice(args.indexOf('-t'), args.indexOf('-t') + 2), ['-t', 'none']);
+  assert.deepEqual(args.slice(args.indexOf('-t'), args.indexOf('-t') + 2), ['-t', 'todo']);
   assert.ok(args.includes('--ignore-rules'));
   assert.ok(!args.includes('--yolo'));
   assert.deepEqual(args.slice(args.indexOf('-m'), args.indexOf('-m') + 2), ['-m', 'Hermes-4-405B']);

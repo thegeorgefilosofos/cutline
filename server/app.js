@@ -32,7 +32,7 @@ export function createApp() {
       enabled: agentEnabled(),
       bin: (process.env.HERMES_BIN || '').trim() ? 'HERMES_BIN' : 'default install location',
       model: (process.env.HERMES_AGENT_MODEL || '').trim() || null,
-      toolsets: (process.env.HERMES_AGENT_TOOLSETS ?? 'none').trim() || null,
+      toolsets: (process.env.HERMES_AGENT_TOOLSETS ?? 'todo').trim() || null,
       installed: agentHealth.version,
       lastRun: agentHealth.run,
       // true only after a real Hermes Agent run returned valid directions

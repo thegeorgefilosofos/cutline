@@ -77,7 +77,7 @@ one-shot mode (`hermes -z`) instead of calling the Nous API directly. The answer
 same validator; on any failure the app falls back to the local interpreter and says so.
 
 Safety: visitor text is untrusted and `-z` auto-approves tool use, so the server launches the binary
-without a shell, with `-t none` (configurable via `HERMES_AGENT_TOOLSETS`), `--ignore-rules`, in an
+without a shell, with `-t todo`, the most harmless toolset (an in-session task list; no files, terminal, web or browser; configurable via `HERMES_AGENT_TOOLSETS`), `--ignore-rules`, in an
 empty temporary folder, with a timeout. `GET /api/status` → `hermesAgent` shows whether it is
 installed and whether a real run has succeeded (`verified`), and with which model.
 
