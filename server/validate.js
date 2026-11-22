@@ -24,7 +24,54 @@ function str(v, [min, max], path, errors) {
   return s.length > max ? s.slice(0, max - 1).trimEnd() + '…' : s;
 }
 
-/** Pull the first JSON object out of a model reply (tolerates code fences / preambles). */
+/**
+ * Escape double quotes that sit *inside* a string value, e.g. "the "radio" low".
+ * A quote closes a string only if the next non-space character is , : ] } or the end.
+ */
+function escapeInnerQuotes(src) {
+  let out = '';
+  let inStr = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (!inStr) {
+      if (c === '"') inStr = true;
+      out += c;
+      continue;
+    }
+    if (c === '\\') {
+      out += c + (src[i + 1] ?? '');
+      i++;
+      continue;
+    }
+    if (c === '"') {
+      const next = src.slice(i + 1).match(/^\s*(\S)?/)?.[1] ?? '';
+      if (next === '' || ',:]}'.includes(next)) {
+        inStr = false;
+        out += c;
+      } else {
+        out += '\\"';
+      }
+      continue;
+    }
+    if (c === '\n') out += '\\n';
+    else if (c === '\r') out += '';
+    else if (c === '\t') out += ' ';
+    else out += c;
+  }
+  return out;
+}
+
+/** Best-effort repair of common model JSON mistakes. Never invents content. */
+export function repairJson(src) {
+  let s = src.replace(/[\u201C\u201D]/g, '"');
+  s = s.replace(/"\s+(?=")/g, '", '); // missing comma between strings
+  s = s.replace(/([}\]])\s+(?=["{[])/g, '$1, '); // missing comma after } or ]
+  s = escapeInnerQuotes(s);
+  s = s.replace(/,\s*([}\]])/g, '$1'); // trailing commas
+  return s;
+}
+
+/** Pull the first JSON object out of a model reply (tolerates code fences, preambles, small JSON mistakes). */
 export function extractJson(text) {
   if (typeof text !== 'string') throw new Error('empty model reply');
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -32,7 +79,16 @@ export function extractJson(text) {
   const start = body.indexOf('{');
   const end = body.lastIndexOf('}');
   if (start < 0 || end <= start) throw new Error('no JSON object in model reply');
-  return JSON.parse(body.slice(start, end + 1));
+  const raw = body.slice(start, end + 1);
+  try {
+    return JSON.parse(raw);
+  } catch (first) {
+    try {
+      return JSON.parse(repairJson(raw));
+    } catch {
+      throw first;
+    }
+  }
 }
 
 /**

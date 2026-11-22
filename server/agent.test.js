@@ -1,7 +1,7 @@
 // Hermes Agent adapter, tested against a fake `hermes` binary (no install or login needed).
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -70,4 +70,26 @@ test('invalid agent output is never passed through', async () => {
   const r = await post(MEMORY);
   assert.equal(r.status, 502);
   assert.equal((await r.json()).directions, undefined);
+});
+
+test('repairs unescaped inner quotes without a second run', async () => {
+  process.env.FAKE_HERMES_MODE = 'innerquotes';
+  rmSync(LOG + '.count', { force: true });
+  const r = await post(MEMORY);
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.match(j.directions[0].composition, /KITCHEN/);
+  assert.equal(readFileSync(LOG + '.count', 'utf8'), '1');
+});
+
+test('broken reply -> one corrective retry that tells the agent what was wrong', async () => {
+  process.env.FAKE_HERMES_MODE = 'broken-then-ok';
+  rmSync(LOG + '.count', { force: true });
+  const r = await post(MEMORY);
+  assert.equal(r.status, 200);
+  assert.equal(readFileSync(LOG + '.count', 'utf8'), '2');
+  const { args } = JSON.parse(readFileSync(LOG, 'utf8'));
+  assert.match(args[1], /previous reply was not valid JSON/);
+  const s = await (await fetch(`${url}/api/status?check=0`)).json();
+  assert.equal(s.hermesAgent.lastRun.attempts, 2);
 });

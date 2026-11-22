@@ -5,7 +5,7 @@ import type { Analysis } from './analyze';
 import type { CreativeDirection, Direction, Interpretation, Memory, Params } from './types';
 
 
-const TIMEOUT_MS = 130_000; // longer than the server-side agent timeout (120 s)
+const TIMEOUT_MS = 200_000; // covers two server-side agent runs (90 s each) when the first reply is unusable
 
 export const isHermesModel = (model?: string) => /hermes/i.test(model || '');
 
