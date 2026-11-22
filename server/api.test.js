@@ -96,7 +96,8 @@ test('interpret returns validated Hermes directions', async () => {
   const r = await post({ text: MEMORY, year: '2009' });
   assert.equal(r.status, 200);
   const j = await r.json();
-  assert.equal(j.source, 'hermes');
+  assert.equal(j.source, 'nous');
+  assert.equal(j.hermes, true);
   assert.equal(j.model, 'NousResearch/Hermes-Test-8B');
   assert.equal(j.directions.length, 3);
   const call = seen.find((s) => s.url === '/v1/chat/completions');
@@ -104,6 +105,7 @@ test('interpret returns validated Hermes directions', async () => {
   assert.match(call.body.messages[1].content, /Sunday mornings/);
   const s = await (await fetch(`${apiUrl}/api/status?check=0`)).json();
   assert.equal(s.nous.connected, true);
+  assert.equal(s.nous.hermesVerified, true);
 });
 
 test('invalid model output -> 502, never passed through', async () => {

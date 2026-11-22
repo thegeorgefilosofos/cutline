@@ -6,6 +6,8 @@ import { extractJson, LIGHTS, MOTIFS, validateInterpretation } from './validate.
 const BASE = () => (process.env.NOUS_BASE_URL || 'https://inference-api.nousresearch.com/v1').replace(/\/+$/, '');
 const key = () => (process.env.NOUS_API_KEY || '').trim();
 
+export const isHermesModel = (id) => /hermes/i.test(String(id || ''));
+
 export const keyConfigured = () => key().length > 0 && !/^your-.*-here$/.test(key());
 
 /** Remove any accidental echo of the key from text we might show or log. */
@@ -107,7 +109,7 @@ async function chat(model, messages, jsonMode) {
       model,
       messages,
       temperature: 0.8,
-      max_tokens: 1600,
+      max_tokens: 4000,
       ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
     }),
     signal: AbortSignal.timeout(45_000),
@@ -120,7 +122,11 @@ async function chat(model, messages, jsonMode) {
   }
   const body = JSON.parse(raw);
   const content = body?.choices?.[0]?.message?.content;
-  if (typeof content !== 'string' || !content.trim()) throw new Error('model returned an empty message');
+  if (typeof content !== 'string' || !content.trim()) {
+    const e = new Error(`model returned an empty message (finish_reason: ${body?.choices?.[0]?.finish_reason ?? 'unknown'})`);
+    e.retryable = true;
+    throw e;
+  }
   return { content, servedModel: body?.model || model, usage: body?.usage || null };
 }
 
@@ -153,7 +159,7 @@ export async function interpret(input) {
     } catch (e) {
       lastError = e;
       // Retry without JSON mode only when the request itself was rejected as invalid.
-      if (!(attempt === 0 && (e.status === 400 || e.status === 422 || e instanceof SyntaxError || /JSON/.test(e.message)))) break;
+      if (!(attempt === 0 && (e.retryable || e.status === 400 || e.status === 422 || e instanceof SyntaxError || /JSON/.test(e.message)))) break;
     }
   }
   const error = redact(lastError?.message || 'unknown error');

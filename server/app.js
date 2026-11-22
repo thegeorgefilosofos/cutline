@@ -1,6 +1,6 @@
 // CUTLINE API. Mounted by server/index.js (production + dev).
 import express from 'express';
-import { health, interpret, keyConfigured, listModels, redact } from './nous.js';
+import { health, interpret, isHermesModel, keyConfigured, listModels, redact } from './nous.js';
 
 export function createApp() {
   const app = express();
@@ -22,6 +22,8 @@ export function createApp() {
         lastInterpretation: health.chat,
         // "connected" only after a real authenticated chat completion succeeded.
         connected: Boolean(health.chat?.ok),
+        // "hermesVerified" only if that successful call was served by a Hermes model.
+        hermesVerified: Boolean(health.chat?.ok && isHermesModel(health.chat.model)),
       },
     };
     if (configured && req.query.check !== '0') {
@@ -57,7 +59,7 @@ export function createApp() {
         year: typeof year === 'string' ? year.trim().slice(0, 12) : '',
         preferences,
       });
-      res.json({ ok: true, source: 'hermes', ...result });
+      res.json({ ok: true, source: 'nous', hermes: isHermesModel(result.model), ...result });
     } catch (e) {
       res.status(502).json({ ok: false, source: 'unavailable', error: redact(e.message) });
     }

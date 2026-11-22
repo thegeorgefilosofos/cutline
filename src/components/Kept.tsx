@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { analyze, LIGHT_LABEL } from '../lib/analyze';
 import { renderPrint } from '../lib/render';
+import { sourceLabel } from '../lib/interpret';
 import type { Work } from '../lib/types';
 import { DIRECTIONS } from '../lib/types';
 import { ArtCanvas } from './ArtCanvas';
@@ -55,7 +56,7 @@ export function Kept({ work, onAnother, onCollection }: { work: Work; onAnother:
           </div>
           <div>
             <dt>Interpreted by</dt>
-            <dd>{src?.source === 'hermes' ? `Hermes · ${src.model}` : 'Local interpreter (no AI)'}</dd>
+            <dd>{sourceLabel(src?.source, src?.model)}</dd>
           </div>
           <div>
             <dt>Medium</dt>

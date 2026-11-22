@@ -7,6 +7,16 @@ import type { CreativeDirection, Direction, Interpretation, Memory, Params } fro
 
 const TIMEOUT_MS = 50_000;
 
+export const isHermesModel = (model?: string) => /hermes/i.test(model || '');
+
+/** Honest label for where an interpretation came from. Says "Hermes" only for a Hermes model. */
+export function sourceLabel(source: string | undefined, model?: string): string {
+  if (source === 'nous' || source === 'hermes') {
+    return isHermesModel(model) ? `Hermes · ${model}` : `Nous API · ${model} (not a Hermes model)`;
+  }
+  return 'Local interpreter (no AI)';
+}
+
 export async function interpretMemory(m: Memory): Promise<Interpretation> {
   try {
     const res = await fetch('/api/interpret', {
@@ -16,8 +26,8 @@ export async function interpretMemory(m: Memory): Promise<Interpretation> {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     const body = await res.json().catch(() => null);
-    if (res.ok && body?.ok && body.source === 'hermes' && Array.isArray(body.directions) && body.directions.length === 3) {
-      return { source: 'hermes', model: body.model, ms: body.ms, directions: body.directions };
+    if (res.ok && body?.ok && body.source === 'nous' && Array.isArray(body.directions) && body.directions.length === 3) {
+      return { source: 'nous', model: body.model, ms: body.ms, directions: body.directions };
     }
     return { source: 'local', fallbackReason: body?.error || `server responded ${res.status}` };
   } catch (e) {
@@ -29,7 +39,7 @@ export async function interpretMemory(m: Memory): Promise<Interpretation> {
 
 
 export function directionFor(interp: Interpretation | null, mode: Direction): CreativeDirection | undefined {
-  return interp?.source === 'hermes' ? interp.directions?.find((d) => d.mode === mode) : undefined;
+  return interp?.source === 'nous' ? interp.directions?.find((d) => d.mode === mode) : undefined;
 }
 
 /**
@@ -41,7 +51,8 @@ export function applyDirection(p: Params, interp: Interpretation | null, mode: D
   if (!d) return { ...p, direction: mode, motifs: undefined };
   const kept: number[] = [];
   d.keep_words.forEach((w) => {
-    const i = a.tokens.findIndex((t) => t.clean === w);
+    // only meaningful words the studio can toggle; never filler like 'the' or 'on'
+    const i = a.tokens.findIndex((t) => t.salient && t.clean === w);
     if (i >= 0 && !kept.includes(i)) kept.push(i);
   });
   return {

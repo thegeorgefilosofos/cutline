@@ -1,7 +1,7 @@
 import type { Analysis } from '../lib/analyze';
 import { LIGHT_LABEL } from '../lib/analyze';
 import type { Direction, Interpretation, Memory, Params } from '../lib/types';
-import { applyDirection, directionFor } from '../lib/interpret';
+import { applyDirection, directionFor, sourceLabel } from '../lib/interpret';
 import { DIRECTIONS } from '../lib/types';
 import { ArtCanvas } from './ArtCanvas';
 
@@ -32,14 +32,14 @@ export function Directions({
         <div className="dirs-brief">
           <p className="mono label">Working title</p>
           <p className="dirs-title">{directionFor(interp, 'afterglow')?.title ?? analysis.title}</p>
-          <p className={`mono source ${interp?.source === 'hermes' ? 'source-ai' : ''}`}>
-            {interp?.source === 'hermes' ? (
-              <>Interpreted by Hermes · {interp.model}</>
+          <p className={`mono source ${interp?.source === 'nous' ? 'source-ai' : ''}`}>
+            {interp?.source === 'nous' ? (
+              <>Interpreted by {sourceLabel(interp.source, interp.model)}</>
             ) : (
               <>Local interpreter · Hermes unavailable{interp?.fallbackReason ? ` (${interp.fallbackReason})` : ''}</>
             )}
           </p>
-          {interp?.source !== 'hermes' && (
+          {interp?.source !== 'nous' && (
             <p className="mono dim">
               {LIGHT_LABEL[analysis.light]} light · {analysis.hero} · {memory.year || 'undated'}
             </p>

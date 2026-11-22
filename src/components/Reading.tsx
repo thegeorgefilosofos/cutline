@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Analysis } from '../lib/analyze';
 import { LIGHT_LABEL } from '../lib/analyze';
 import type { Interpretation } from '../lib/types';
+import { sourceLabel } from '../lib/interpret';
 
 export function Reading({
   analysis,
@@ -48,9 +49,9 @@ export function Reading({
   }, [animDone, interp, onDone]);
 
   const sourceLine = !interp
-    ? `Asking Hermes ${'.'.repeat(dots).padEnd(3, ' ')}`
-    : interp.source === 'hermes'
-      ? `Interpreted by ....... Hermes · ${interp.model}`
+    ? `Asking the interpreter ${'.'.repeat(dots).padEnd(3, ' ')}`
+    : interp.source === 'nous'
+      ? `Interpreted by ....... ${sourceLabel(interp.source, interp.model)}`
       : `Interpreted by ....... local interpreter (Hermes unavailable)`;
 
   return (
@@ -70,7 +71,7 @@ export function Reading({
           </div>
         ))}
         {lineCount >= lines.length && (
-          <div key={interp ? interp.source : 'wait'} className={`log-line ${interp?.source === 'hermes' ? 'log-ok' : ''}`}>
+          <div key={interp ? interp.source : 'wait'} className={`log-line ${interp?.source === 'nous' ? 'log-ok' : ''}`}>
             {sourceLine}
           </div>
         )}
